@@ -1,32 +1,16 @@
 ---
-- name: Deploy and configure Nginx web server
-  hosts: slaves              
-  become: yes                
-  vars:
-    nginx_package: nginx     
-
+- name: Установить и запустить Nginx на slave-нодах
+  hosts: slaves                
+  become: yes                 
   tasks:
-    - name: Update apt cache
+    - name: Установить Nginx
       apt:
-        update_cache: yes
-        cache_valid_time: 3600  
+        name: nginx
+        state: present         
+        update_cache: yes      
 
-    - name: Install Nginx
-      apt:
-        name: "{{ nginx_package }}"
-        state: present
-        update_cache: no        
-
-    - name: Ensure Nginx is started and enabled at boot
+    - name: Запустить и включить Nginx при загрузке
       systemd:
         name: nginx
         state: started
         enabled: yes
-
-    - name: Verify Nginx is listening on port 80
-      wait_for:
-        port: 80
-        host: "{{ ansible_default_ipv4.address }}"
-        timeout: 10
-      delegate_to: localhost
-      run_once: true
