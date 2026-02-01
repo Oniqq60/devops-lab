@@ -1,0 +1,35 @@
+---
+- name: Install Zabbix Agent 2 on slave
+  hosts: slaves
+  become: yes
+  vars:
+    zabbix_server_ip: "10.13.0.25"
+  tasks:
+    - name: Add Zabbix repository
+      apt:
+        deb: "https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_7.0-1+ubuntu22.04_all.deb"
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install zabbix-agent2
+      apt:
+        name: zabbix-agent2
+        state: present
+
+    - name: Configure zabbix_agent2.conf
+      lineinfile:
+        path: /etc/zabbix/zabbix_agent2.conf
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - { regexp: '^Server=', line: 'Server={{ zabbix_server_ip }}' }
+        - { regexp: '^ServerActive=', line: 'ServerActive={{ zabbix_server_ip }}' }
+        - { regexp: '^Hostname=', line: 'Hostname={{ inventory_hostname }}' }
+
+    - name: Start and enable zabbix-agent2
+      systemd:
+        name: zabbix-agent2
+        state: started
+        enabled: yes
