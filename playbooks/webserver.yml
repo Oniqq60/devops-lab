@@ -1,24 +1,29 @@
 ---
-- name: Установить и запустить Nginx на slave-нодах
-  hosts: slaves                
-  become: yes                 
-  tasks:
-    - name: Установить Nginx
-      apt:
-        name: nginx
-        state: present         
-        update_cache: yes      
-
-    - name: Запустить и включить Nginx при загрузке
-      systemd:
-        name: nginx
-        state: started
-        enabled: yes
-
-    - name: Verify Nginx is running
-      systemd:
-        name: nginx
-        state: started
-        enabled: yes
-      check_mode: no
+  - name: Установить и запустить Nginx на slave-нодах
+    hosts: slaves                
+    become: yes                 
+    tasks:
+      - name: Установить Nginx
+        apt:
+          name: nginx
+          state: present         
+          update_cache: yes      
   
+      - name: Запустить и включить Nginx при загрузке
+        systemd:
+          name: nginx
+          state: started
+          enabled: yes
+  
+      - name: Проверить, что Nginx отдаёт страницу по HTTP
+        uri:
+          url: http://127.0.0.1/
+          method: GET
+          status_code: 200
+        delegate_to: "{{ inventory_hostname }}"
+        register: nginx_check
+        
+      - name: Подтвердить успешное развертывание
+        debug:
+          msg: "✅ Nginx успешно развёрнут на {{ inventory_hostname }} — сайт доступен!"
+        when: nginx_check.status == 200
